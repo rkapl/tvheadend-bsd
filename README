@@ -23,6 +23,22 @@ $ ./build.linux/tvheadend
 
 Settings are stored in $HOME/.hts/tvheadend
 
+How to build for FreeBSD
+========================
+
+First you need to configure tvheadend without epoll. Note that this
+option also disables IPTV inputs.
+
+$ ./configure --disable-epoll
+
+To build tvheadend you should use gmake, instead of make.
+
+$ gmake
+
+The built binary is now in 'build.linux/'. Check that you have your drivers
+installed and that webcamd daemon is running, if required. No further setup
+should be needed.
+
 Further information
 ===================
 

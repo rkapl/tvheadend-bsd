@@ -1747,6 +1747,8 @@ extjs_iptvservices(http_connection_t *hc, const char *remain, void *opaque)
 
     out = build_record_iptv(iptv_service_find(NULL, 1));
 
+  } else if(!strcmp(op, "check")) {
+     out = htsmsg_create_map();
   } else if(!strcmp(op, "delete")) {
     if(in != NULL)
       extjs_service_delete(in);

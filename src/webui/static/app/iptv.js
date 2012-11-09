@@ -152,7 +152,6 @@ tvheadend.iptv = function(adapterId) {
 			}
 		}
 	});
-
 	/*
 	 var storeReloader = new Ext.util.DelayedTask(function() {
 	store.reload()
@@ -309,6 +308,16 @@ tvheadend.iptv = function(adapterId) {
 	selModel.on('selectionchange', function(self) {
 		delButton.setDisabled(self.getCount() == 0);
 	});
+
+   //check for iptv usability
+   Ext.Ajax.request({
+      url : "iptv/check",
+      success : function(response, options) {
+      },
+      failure:function(){
+         grid.setDisabled(true);
+      }
+   })
 
 	return grid;
 }
