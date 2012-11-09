@@ -244,6 +244,17 @@ function check_pkg
 # Compiler Tests
 # ###########################################################################
 
+function check_library
+{
+   local name=$1
+   echo -ne "Checking if dl is shared library ... ${TAB}"
+   if ld -l$name &> /dev/null; then
+      echo ok
+      enable external_dl
+   else
+      echo fail
+   fi
+}
 # Check compiler
 function check_cc
 {

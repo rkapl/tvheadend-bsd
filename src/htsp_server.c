@@ -660,7 +660,7 @@ htsp_method_getSysTime(htsp_connection_t *htsp, htsmsg_t *in)
 
   out = htsmsg_create_map();
   htsmsg_add_s32(out, "time", tv.tv_sec);
-  htsmsg_add_s32(out, "timezone", timezone / 60);
+  htsmsg_add_s32(out, "timezone", tvh_timezone() / 60);
   return out;
 }
 

@@ -29,7 +29,13 @@
 #include <arpa/inet.h>
 
 #include <sys/stat.h>
-#include <sys/sendfile.h>
+
+#if __FreeBSD__
+  #include <sys/uio.h>
+#else
+  #include <sys/sendfile.h>
+#endif
+#include <sys/socket.h>
 
 #include "tvheadend.h"
 #include "access.h"
@@ -574,7 +580,7 @@ http_stream_service(http_connection_t *hc, service_t *service)
 
   s = subscription_create_from_service(service, "HTTP", st, flags);
   if(s) {
-    name = strdupa(service->s_ch ?
+    name = tvh_strdupa(service->s_ch ?
                    service->s_ch->ch_name : service->s_nicename);
     pthread_mutex_unlock(&global_lock);
     http_stream_run(hc, &sq, name, mc);
@@ -606,7 +612,7 @@ http_stream_tdmi(http_connection_t *hc, th_dvb_mux_instance_t *tdmi)
   streaming_queue_init(&sq, SMT_PACKET);
 
   s = dvb_subscription_create_from_tdmi(tdmi, "HTTP", &sq.sq_st);
-  name = strdupa(tdmi->tdmi_identifier);
+  name = tvh_strdupa(tdmi->tdmi_identifier);
   pthread_mutex_unlock(&global_lock);
   http_stream_run(hc, &sq, name, MC_PASS);
   pthread_mutex_lock(&global_lock);
@@ -668,7 +674,7 @@ http_stream_channel(http_connection_t *hc, channel_t *ch)
 				       http_arg_get(&hc->hc_args, "User-Agent"));
 
   if(s) {
-    name = strdupa(ch->ch_name);
+    name = tvh_strdupa(ch->ch_name);
     pthread_mutex_unlock(&global_lock);
     http_stream_run(hc, &sq, name, mc);
     pthread_mutex_lock(&global_lock);
@@ -872,7 +878,11 @@ page_dvrfile(http_connection_t *hc, const char *remain, void *opaque)
   if(!hc->hc_no_output) {
     while(content_len > 0) {
       chunk = MIN(1024 * 1024 * 1024, content_len);
-      r = sendfile(hc->hc_fd, fd, NULL, chunk);
+      #if __FreeBSD__
+        r = sendfile(hc->hc_fd, fd, 0,0, NULL,NULL, 0);
+      #else
+        r = sendfile(hc->hc_fd, fd, NULL, chunk);
+      #endif
       if(r == -1) {
 	close(fd);
 	return -1;

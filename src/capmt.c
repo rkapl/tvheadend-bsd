@@ -33,7 +33,7 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <linux/ioctl.h>
+#include <sys/ioctl.h>
 #include <linux/dvb/ca.h>
 #include <fcntl.h>
 
@@ -70,7 +70,10 @@
 #define CW_DUMP(buf, len, format, ...) \
   printf(format, __VA_ARGS__); int j; for (j = 0; j < len; ++j) printf("%02X ", buf[j]); printf("\n");
 
+#ifndef __FreeBSD__
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 #define MAX_CA  4
 #define MAX_INDEX 64
 #define KEY_SIZE  8

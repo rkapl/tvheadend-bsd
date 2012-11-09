@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <sys/socket.h>
 
 #include "tvheadend.h"
 #include "settings.h"

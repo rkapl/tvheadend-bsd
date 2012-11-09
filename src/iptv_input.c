@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#if ENABLE_EPOLL
 #include <pthread.h>
 
 #include <sys/types.h>
@@ -40,6 +40,8 @@
 #include "tsdemux.h"
 #include "psi.h"
 #include "settings.h"
+#include "config.h"
+
 
 static int iptv_thread_running;
 static int iptv_epollfd;
@@ -638,3 +640,4 @@ iptv_input_init(void)
   pthread_mutex_init(&iptv_recvmutex, NULL);
   iptv_service_load();
 }
+#endif

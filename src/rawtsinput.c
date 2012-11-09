@@ -263,11 +263,11 @@ process_ts_packet(rawts_t *rt, uint8_t *tsb)
 	  if(delta > 90000)
 	    delta = 90000;
 	  delta *= 11;
-	  d = delta + t->s_pcr_last_realtime;
+	  d = delta + t->s_pcr_last_realtime- getmonoclock();
 	  slp.tv_sec  =  d / 1000000;
 	  slp.tv_nsec = (d % 1000000) * 1000;
 	
-	  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &slp, NULL);
+	  nanosleep(&slp,NULL);
 	  didsleep = 1;
 	}
 	t->s_pcr_last = pcr;

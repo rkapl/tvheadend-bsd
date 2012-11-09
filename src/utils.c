@@ -21,6 +21,7 @@
 #include <string.h>
 #include <assert.h>
 #include <openssl/md5.h>
+#include <time.h>
 #include "tvheadend.h"
 
 /**
@@ -71,6 +72,14 @@ static uint32_t crc_tab[256] = {
   0x933eb0bb, 0x97ffad0c, 0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668,
   0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
+
+long int tvh_timezone(void){
+  time_t now;
+  struct tm timeinfo;
+  time(&now);
+  localtime_r(&now,&timeinfo);
+  return timeinfo.tm_gmtoff;
+}
 
 uint32_t
 tvh_crc32(uint8_t *data, size_t datalen, uint32_t crc)

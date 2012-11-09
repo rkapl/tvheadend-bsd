@@ -20,17 +20,37 @@
 #define TCP_H_
 
 #include "htsbuf.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
 
+
+typedef void (tcp_server_callback_t)(int fd, void *opaque,
+                     struct sockaddr_in *peer,
+                     struct sockaddr_in *self);
+typedef struct tcp_server tcp_server_t;
+//typedef struct tcp_server_launch_t tcp_server_launch_t;
+
+/**
+ * @brief Start the main listening thread. It will listen to threads created by tcp_server_create
+ */
 void tcp_server_init(void);
 
+/**
+ * Makes a TCP connection to the given host. If something fails, a human readable message will
+ * be written to errbuf
+ * @return socket file descriptor
+ */
 int tcp_connect(const char *hostname, int port, char *errbuf,
 		size_t errbufsize, int timeout);
 
-typedef void (tcp_server_callback_t)(int fd, void *opaque,
-				     struct sockaddr_in *peer,
-				     struct sockaddr_in *self);
-
-void *tcp_server_create(int port, tcp_server_callback_t *start, void *opaque);
+/**
+ * @brief Starts listening on given port. This call will not block.
+ * @param port listening port
+ * @param start callback for incommming connections
+ * @param opaque values passed to callback
+ * @return tcp_server instance
+ */
+tcp_server_t* tcp_server_create(int port, tcp_server_callback_t *start, void *opaque);
 
 int tcp_read(int fd, void *buf, size_t len);
 

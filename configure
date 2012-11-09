@@ -23,6 +23,8 @@ OPTIONS=(
   "avahi:auto"
   "zlib:auto"
   "bundle:no"
+  "epoll:yes"
+  "external_dl:no"
 )
 
 #
@@ -43,6 +45,8 @@ check_cc || die 'No C compiler found'
 check_cc_header execinfo
 check_cc_option mmx
 check_cc_option sse2
+check_library dl
+
 
 check_cc_snippet getloadavg '#include <stdlib.h> 
 void test() { getloadavg(NULL,0); }'
@@ -115,6 +119,18 @@ if enabled linuxdvb && enabled dvbscan; then
     fi
   fi
 fi
+
+#epoll
+if enabled epoll; then
+   if check_cc '#include <sys/epoll.h>'; then
+      echo "done"
+   else
+      echo
+      die "Epoll is not supported on your system (use --disable-epoll)"
+   fi
+fi
+
+
 
 # ###########################################################################
 # Write config

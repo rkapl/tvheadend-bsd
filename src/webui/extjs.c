@@ -1610,7 +1610,7 @@ extjs_mergechannel(http_connection_t *hc, const char *remain, void *opaque)
   http_output_content(hc, "text/x-json; charset=UTF-8");
   return 0;
 }
-
+#if ENABLE_EPOLL == 1
 /**
  *
  */
@@ -1686,7 +1686,6 @@ build_record_iptv(service_t *t)
   htsmsg_add_u32(r, "enabled", t->s_enabled);
   return r;
 }
-
 /**
  *
  */
@@ -1774,6 +1773,7 @@ extjs_iptvservices(http_connection_t *hc, const char *remain, void *opaque)
   http_output_content(hc, "text/x-json; charset=UTF-8");
   return 0;
 }
+#endif
 
 /**
  *
@@ -1921,7 +1921,9 @@ extjs_start(void)
   http_path_add("/config",         NULL, extjs_config,         ACCESS_WEB_INTERFACE);
   http_path_add("/languages",      NULL, extjs_languages,      ACCESS_WEB_INTERFACE);
   http_path_add("/mergechannel",   NULL, extjs_mergechannel,   ACCESS_ADMIN);
+#if ENABLE_EPOLL
   http_path_add("/iptv/services",  NULL, extjs_iptvservices,   ACCESS_ADMIN);
+#endif
   http_path_add("/servicedetails", NULL, extjs_servicedetails, ACCESS_ADMIN);
   http_path_add("/tv/adapter",     NULL, extjs_tvadapter,      ACCESS_ADMIN);
 

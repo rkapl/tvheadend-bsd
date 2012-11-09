@@ -17,8 +17,8 @@ msleep(uint32_t msec)
 }
 
 int
-diseqc_send_msg(int fe_fd, __u8 framing_byte, __u8 address, __u8 cmd,
-                    __u8 data_1,  __u8 data_2, __u8 data_3, __u8 msg_len)
+diseqc_send_msg(int fe_fd, uint8_t framing_byte, uint8_t address, uint8_t cmd,
+                    uint8_t data_1,  uint8_t data_2, uint8_t data_3, uint8_t msg_len)
 {
   struct dvb_diseqc_master_cmd message;
 

@@ -23,16 +23,22 @@
 include ${CURDIR}/.config.mk
 PROG = ${BUILDDIR}/tvheadend
 
+ifeq (${CONFIG_EXTERNAL_DL},yes)
+LD_LIB_FLAGS = -ldl
+else
+LD_LIB_FLAGS = 
+endif
 #
 # Common compiler flags
 #
 
-CFLAGS  += -Wall -Werror -Wwrite-strings -Wno-deprecated-declarations
+CFLAGS  += -Wall -Werror -Wwrite-strings -Wno-deprecated-declarations -Wno-format -Wno-unused-function
 CFLAGS  += -Wmissing-prototypes -fms-extensions
 CFLAGS  += -g -funsigned-char -O2 
 CFLAGS  += -D_FILE_OFFSET_BITS=64
 CFLAGS  += -I${BUILDDIR} -I${CURDIR}/src -I${CURDIR}
-LDFLAGS += -lrt -ldl -lpthread
+LDFLAGS += -lrt -lpthread ${LD_LIB_FLAGS}
+
 
 #
 # Other config
@@ -179,6 +185,12 @@ SRCS-${CONFIG_SSE2} += src/ffdecsa/ffdecsa_sse2.c
 ${BUILDDIR}/src/ffdecsa/ffdecsa_mmx.o  : CFLAGS += -mmmx
 ${BUILDDIR}/src/ffdecsa/ffdecsa_sse2.o : CFLAGS += -msse2
 
+#Epoll
+ifeq (${CONFIG_EPOLL},yes)
+SRCS += src/tcp_epoll.c
+else
+SRCS += src/tcp_poll.c
+endif
 # File bundles
 SRCS-${CONFIG_BUNDLE}     += bundle.c
 BUNDLES-yes               += docs/html docs/docresources src/webui/static
@@ -223,7 +235,7 @@ ${BUILDDIR}/%.o: %.c
 # Add-on
 ${BUILDDIR}/%.so: ${SRCS_EXTRA}
 	@mkdir -p $(dir $@)
-	${CC} -O -fbuiltin -fomit-frame-pointer -fPIC -shared -o $@ $< -ldl
+	${CC} -O -fbuiltin -fomit-frame-pointer -fPIC -shared -o $@ $< ${LD_LIB_FLAGS}
 
 # Clean
 clean:

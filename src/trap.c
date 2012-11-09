@@ -20,9 +20,10 @@
 
 char tvh_binshasum[20];
 
-#if defined(__i386__) || defined(__x86_64__)
+#if ( defined(__i386__) || defined(__x86_64__)) && defined(__linux)
 
-// Only do this on x86 for now
+// Only do this on x86 and linux for now
+// Freebsd has different layout of ucontext structure an we can not use gregs
 
 #define _GNU_SOURCE
 #include <link.h>

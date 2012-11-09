@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sys/epoll.h>
+#include <sys/poll.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
@@ -850,10 +850,10 @@ static void *
 dvb_adapter_input_dvr(void *aux)
 {
   th_dvb_adapter_t *tda = aux;
-  int fd, i, r, c, efd, nfds, dmx = -1;
+  int fd, i, r, c, nfds, dmx = -1;
   uint8_t tsb[188 * 10];
   service_t *t;
-  struct epoll_event ev;
+  struct pollfd poll_list[2];
   char path[256];
 
   snprintf(path, sizeof(path), "%s/dvr0", tda->tda_rootpath);
@@ -896,21 +896,20 @@ dvb_adapter_input_dvr(void *aux)
   }
 
   /* Create poll */
-  efd = epoll_create(2);
-  memset(&ev, 0, sizeof(ev));
-  ev.events  = EPOLLIN;
-  ev.data.fd = fd;
-  epoll_ctl(efd, EPOLL_CTL_ADD, fd, &ev);
-  ev.data.fd = tda->tda_dvr_pipe[0];
-  epoll_ctl(efd, EPOLL_CTL_ADD, tda->tda_dvr_pipe[0], &ev);
+  poll_list[0].fd=fd;
+  poll_list[0].events=POLLIN;
+  poll_list[1].fd=tda->tda_dvr_pipe[0];
+  poll_list[1].events=POLLIN;
 
   r = i = 0;
   while(1) {
-
+    poll_list[0].revents=0;
+    poll_list[1].revents=0;
     /* Wait for input */
-    nfds = epoll_wait(efd, &ev, 1, -1);
+    nfds = poll(poll_list,2,-1);
+    //nfds = epoll_wait(efd, &ev, 1, -1);
     if (nfds < 1) continue;
-    if (ev.data.fd != fd) break;
+    if (poll_list[1].revents!=0) break;
 
     c = read(fd, tsb+r, sizeof(tsb)-r);
     if (c < 0) {
@@ -989,7 +988,6 @@ dvb_adapter_input_dvr(void *aux)
 
   if(dmx != -1)
     close(dmx);
-  close(efd);
   close(fd);
   return NULL;
 }

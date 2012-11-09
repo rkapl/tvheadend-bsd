@@ -447,7 +447,9 @@ main(int argc, char **argv)
 #if ENABLE_LINUXDVB
   dvb_init(adapter_mask, dvb_rawts_input);
 #endif
+#if ENABLE_EPOLL
   iptv_input_init();
+#endif
 #if ENABLE_V4L
   v4l_init();
 #endif
