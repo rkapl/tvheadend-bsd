@@ -311,7 +311,8 @@ tvheadend.iptv = function(adapterId) {
 
    //check for iptv usability
    Ext.Ajax.request({
-      url : "iptv/check",
+      url : "iptv/services",
+      params: {'op':'check'},
       success : function(response, options) {
       },
       failure:function(){
