@@ -1610,7 +1610,7 @@ extjs_mergechannel(http_connection_t *hc, const char *remain, void *opaque)
   http_output_content(hc, "text/x-json; charset=UTF-8");
   return 0;
 }
-#if ENABLE_EPOLL == 1
+#if ENABLE_EPOLL 
 /**
  *
  */

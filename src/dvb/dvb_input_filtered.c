@@ -28,7 +28,7 @@
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/dmx.h>
 #include <config.h>
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
 #include <sys/epoll.h>
 #else
 #include<poll.h>
@@ -118,7 +118,7 @@ static void
 open_table(th_dvb_mux_instance_t *tdmi, th_dvb_table_t *tdt)
 {
   th_dvb_adapter_t *tda = tdmi->tdmi_adapter;
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
   struct epoll_event e;
 #endif
   static int tdt_id_tally;
@@ -128,7 +128,7 @@ open_table(th_dvb_mux_instance_t *tdmi, th_dvb_table_t *tdt)
   if(tdt->tdt_fd != -1) {
 
     tdt->tdt_id = ++tdt_id_tally;
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
     e.events = EPOLLIN;
     e.data.u64 = ((uint64_t)tdt->tdt_fd << 32) | tdt->tdt_id;
 
@@ -153,7 +153,7 @@ open_table(th_dvb_mux_instance_t *tdmi, th_dvb_table_t *tdt)
 	close(tdt->tdt_fd);
 	tdt->tdt_fd = -1;
       }
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
     }
 #endif
   }
@@ -172,7 +172,7 @@ tdt_close_fd(th_dvb_mux_instance_t *tdmi, th_dvb_table_t *tdt)
 
   th_dvb_adapter_t *tda = tdmi->tdmi_adapter;
   assert(tdt->tdt_fd != -1);
-#ifdef EPOLL_ENABLED
+#if ENABLE_EPOLL
   epoll_ctl(tda->tda_table_epollfd, EPOLL_CTL_DEL, tdt->tdt_fd, NULL);
 #else
   write(tda->tda_table_poll_wakeup_pipe[1],"f",1);
@@ -320,7 +320,7 @@ close_table(th_dvb_mux_instance_t *tdmi, th_dvb_table_t *tdt)
   if(tdt->tdt_fd == -1) {
     TAILQ_REMOVE(&tdmi->tdmi_table_queue, tdt, tdt_pending_link);
   } else {
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
     epoll_ctl(tda->tda_table_epollfd, EPOLL_CTL_DEL, tdt->tdt_fd, NULL);
 #else
     write(tda->tda_table_poll_wakeup_pipe[1],"c",1);
@@ -341,7 +341,7 @@ dvb_input_filtered_setup(th_dvb_adapter_t *tda)
   tda->tda_close_table   = close_table;
 
   pthread_t ptid;
-#if EPOLL_ENABLED
+#if ENABLE_EPOLL
   tda->tda_table_epollfd = epoll_create(50);
 #else
   pipe(tda->tda_table_poll_wakeup_pipe);
