@@ -37,7 +37,7 @@ CFLAGS  += -Wmissing-prototypes -fms-extensions
 CFLAGS  += -g -funsigned-char -O2 
 CFLAGS  += -D_FILE_OFFSET_BITS=64
 CFLAGS  += -I${BUILDDIR} -I${CURDIR}/src -I${CURDIR}
-LDFLAGS += -lrt -lpthread ${LD_LIB_FLAGS}
+LDFLAGS += -lrt -lpthread -lm ${LD_LIB_FLAGS}
 
 
 #
@@ -100,6 +100,8 @@ SRCS =  src/main.c \
 	src/htsmsg_binary.c \
 	src/htsmsg_json.c \
 	src/htsmsg_xml.c \
+	src/misc/dbl.c \
+	src/misc/json.c \
 	src/settings.c \
 	src/htsbuf.c \
 	src/trap.c \

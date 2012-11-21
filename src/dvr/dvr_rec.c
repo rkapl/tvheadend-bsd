@@ -206,6 +206,11 @@ pvr_generate_filename(dvr_entry_t *de, const streaming_start_t *ss)
 
   snprintf(path, sizeof(path), "%s", cfg->dvr_storage);
 
+  /* Remove trailing slash */
+
+  if (path[strlen(path)-1] == '/')
+    path[strlen(path)-1] = '\0';
+
   /* Append per-day directory */
 
   if(cfg->dvr_flags & DVR_DIR_PER_DAY) {
@@ -346,7 +351,7 @@ dvr_rec_start(dvr_entry_t *de, const streaming_start_t *ss)
     return -1;
   }
 
-  if(cfg->dvr_flags & DVR_TAG_FILES) {
+  if(cfg->dvr_flags & DVR_TAG_FILES && de->de_bcast) {
     if(muxer_write_meta(de->de_mux, de->de_bcast)) {
       dvr_rec_fatal_error(de, "Unable to write meta data");
       return -1;
@@ -443,7 +448,8 @@ dvr_thread(void *aux)
     switch(sm->sm_type) {
     case SMT_MPEGTS:
     case SMT_PACKET:
-      if(dispatch_clock > de->de_start - (60 * de->de_start_extra)) {
+      if(started &&
+	 dispatch_clock > de->de_start - (60 * de->de_start_extra)) {
 	dvr_rec_set_state(de, DVR_RS_RUNNING, 0);
 
 	muxer_write_pkt(de->de_mux, sm->sm_type, sm->sm_data);

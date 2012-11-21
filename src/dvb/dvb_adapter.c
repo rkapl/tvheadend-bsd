@@ -510,9 +510,14 @@ tda_add(int adapter_num)
 
   dvb_adapter_checkspeed(tda);
 
+
+  if(!strcmp(tda->tda_fe_info->name, "Sony CXD2820R (DVB-T/T2)"))
+    tda->tda_snr_valid = 1;
+
   tvhlog(LOG_INFO, "dvb",
-	 "Found adapter %s (%s) via %s", path, tda->tda_fe_info->name,
-	 hostconnection2str(tda->tda_hostconnection));
+	 "Found adapter %s (%s) via %s%s", path, tda->tda_fe_info->name,
+	 hostconnection2str(tda->tda_hostconnection),
+         tda->tda_snr_valid ? ", Reports valid SNR values" : "");
 
   TAILQ_INSERT_TAIL(&dvb_adapters, tda, tda_global_link);
 
@@ -1040,8 +1045,16 @@ dvb_adapter_build_msg(th_dvb_adapter_t *tda)
   htsmsg_add_u32(m, "initialMuxes", tda->tda_initial_num_mux);
 
   if(tda->tda_mux_current != NULL) {
+    th_dvb_mux_instance_t *tdmi = tda->tda_mux_current;
+
     dvb_mux_nicename(buf, sizeof(buf), tda->tda_mux_current);
     htsmsg_add_str(m, "currentMux", buf);
+
+    htsmsg_add_u32(m, "signal", MIN(tdmi->tdmi_signal * 100 / 65535, 100));
+    htsmsg_add_u32(m, "snr", tdmi->tdmi_snr);
+    htsmsg_add_u32(m, "ber", tdmi->tdmi_ber);
+    htsmsg_add_u32(m, "unc", tdmi->tdmi_unc);
+    htsmsg_add_u32(m, "uncavg", tdmi->tdmi_unc_avg);
   }
 
   if(tda->tda_rootpath == NULL)
