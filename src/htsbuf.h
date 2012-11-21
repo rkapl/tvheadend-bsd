@@ -21,6 +21,7 @@
 
 #include <stdarg.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "queue.h"
 
