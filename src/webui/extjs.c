@@ -1971,6 +1971,7 @@ extjs_start(void)
 {
   http_path_add("/about.html",     NULL, page_about,           ACCESS_WEB_INTERFACE);
   http_path_add("/extjs.html",     NULL, extjs_root,           ACCESS_WEB_INTERFACE);
+  http_path_add("/capabilities",   NULL, extjs_capabilities,   ACCESS_WEB_INTERFACE);
   http_path_add("/tablemgr",       NULL, extjs_tablemgr,       ACCESS_WEB_INTERFACE);
   http_path_add("/channels",       NULL, extjs_channels,       ACCESS_WEB_INTERFACE);
   http_path_add("/epggrab",        NULL, extjs_epggrab,        ACCESS_WEB_INTERFACE);

@@ -309,16 +309,6 @@ tvheadend.iptv = function(adapterId) {
 		delButton.setDisabled(self.getCount() == 0);
 	});
 
-   //check for iptv usability
-   Ext.Ajax.request({
-      url : "iptv/services",
-      params: {'op':'check'},
-      success : function(response, options) {
-      },
-      failure:function(){
-         grid.setDisabled(true);
-      }
-   })
 
 	return grid;
 }

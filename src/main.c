@@ -89,6 +89,9 @@ const char *tvheadend_capabilities[] = {
 #if ENABLE_LINUXDVB
   "linuxdvb",
 #endif
+#if ENABLE_EPOLL
+  "iptv",
+#endif
   NULL
 };
 
