@@ -112,16 +112,16 @@ SRCS =  src/main.c \
 	src/avc.c \
   src/huffman.c \
   src/filebundle.c \
-  src/muxes.c \
   src/config2.c \
   src/lang_codes.c \
   src/lang_str.c \
 
 SRCS += src/epggrab/module.c\
   src/epggrab/channel.c\
-  src/epggrab/otamux.c\
   src/epggrab/module/pyepg.c\
   src/epggrab/module/xmltv.c\
+
+SRCS-$(CONFIG_LINUXDVB) += src/epggrab/otamux.c\
   src/epggrab/module/eit.c \
   src/epggrab/module/opentv.c \
   src/epggrab/support/freesat_huffman.c \
@@ -166,26 +166,31 @@ SRCS-${CONFIG_LINUXDVB} += \
 	src/dvb/dvb_input_filtered.c \
 	src/dvb/dvb_input_raw.c \
 	src/webui/extjs_dvb.c \
+	src/muxes.c \
 
 # V4L
 SRCS-${CONFIG_V4L} += \
 	src/v4l.c \
 	src/webui/extjs_v4l.c \
 
-# CWC
-SRCS-${CONFIG_CWC} += src/cwc.c \
-	src/capmt.c \
-	src/ffdecsa/ffdecsa_interface.c \
-	src/ffdecsa/ffdecsa_int.c
-
 # Avahi
 SRCS-$(CONFIG_AVAHI) += src/avahi.c
 
-# Optimised code
+# CWC
+SRCS-${CONFIG_CWC} += src/cwc.c \
+	src/capmt.c
+
+# FFdecsa
+ifneq ($(CONFIG_DVBCSA),yes)
+SRCS-${CONFIG_CWC}  += src/ffdecsa/ffdecsa_interface.c \
+	src/ffdecsa/ffdecsa_int.c
+ifeq ($(CONFIG_CWC),yes)
 SRCS-${CONFIG_MMX}  += src/ffdecsa/ffdecsa_mmx.c
 SRCS-${CONFIG_SSE2} += src/ffdecsa/ffdecsa_sse2.c
+endif
 ${BUILDDIR}/src/ffdecsa/ffdecsa_mmx.o  : CFLAGS += -mmmx
 ${BUILDDIR}/src/ffdecsa/ffdecsa_sse2.o : CFLAGS += -msse2
+endif
 
 #Epoll
 ifeq (${CONFIG_EPOLL},yes)

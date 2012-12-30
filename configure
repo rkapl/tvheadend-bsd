@@ -25,6 +25,7 @@ OPTIONS=(
   "bundle:no"
   "epoll:yes"
   "external_dl:no"
+  "dvbcsa:no"
 )
 
 #
@@ -131,6 +132,16 @@ if enabled epoll; then
 fi
 
 
+#
+# libdvbcsa
+#
+if enabled cwc && enabled dvbcsa; then
+  (check_cc_header "dvbcsa/dvbcsa" dvbcsa_h &&\
+   check_cc_lib    dvbcsa dvbcsa_l) ||\
+  die "Failed to find dvbcsa support (use --disable-dvbcsa)"
+  LDFLAGS="$LDFLAGS -ldvbcsa"
+fi
+  
 
 # ###########################################################################
 # Write config

@@ -208,8 +208,10 @@ service_start(service_t *t, unsigned int weight, int force_start)
   if((r = t->s_start_feed(t, weight, force_start)))
     return r;
 
+#if ENABLE_CWC
   cwc_service_start(t);
   capmt_service_start(t);
+#endif
 
   pthread_mutex_lock(&t->s_stream_mutex);
 
@@ -933,6 +935,15 @@ service_set_enable(service_t *t, int enabled)
   subscription_reschedule();
 }
 
+void
+service_set_prefcapid(service_t *t, uint32_t prefcapid)
+{
+  if(t->s_prefcapid == prefcapid)
+    return;
+
+  t->s_prefcapid = prefcapid;
+  t->s_config_save(t);
+}
 
 static pthread_mutex_t pending_save_mutex;
 static pthread_cond_t pending_save_cond;

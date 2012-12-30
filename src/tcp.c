@@ -182,12 +182,17 @@ tcp_write_queue(int fd, htsbuf_queue_t *q)
 {
   htsbuf_data_t *hd;
   int l, r = 0;
+  void *p;
 
   while((hd = TAILQ_FIRST(&q->hq_q)) != NULL) {
     TAILQ_REMOVE(&q->hq_q, hd, hd_link);
 
-    l = hd->hd_data_len - hd->hd_data_off;
-    r |= !!write(fd, hd->hd_data + hd->hd_data_off, l);
+    if (!r) {
+      l = hd->hd_data_len - hd->hd_data_off;
+      p = hd->hd_data + hd->hd_data_off;
+      r = tvh_write(fd, p, l);
+    }
+
     free(hd->hd_data);
     free(hd);
   }

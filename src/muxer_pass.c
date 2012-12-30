@@ -51,6 +51,7 @@ typedef struct pass_muxer {
   /* TS muxing */
   uint8_t  *pm_pat;
   uint8_t  *pm_pmt;
+  uint16_t  pm_pmt_version;
   uint32_t pm_ic; // Injection counter
   uint32_t pm_pc; // Packet counter
 } pass_muxer_t;
@@ -128,11 +129,13 @@ pass_muxer_reconfigure(muxer_t* m, const struct streaming_start *ss)
     pm->pm_pmt[2] = 0x00 | (ss->ss_pmt_pid >> 0);
     pm->pm_pmt[3] = 0x10;
     pm->pm_pmt[4] = 0x00;
-    if(psi_build_pmt(ss, pm->pm_pmt+5, 183, ss->ss_pcr_pid) < 0) {
+    if(psi_build_pmt(ss, pm->pm_pmt+5, 183, pm->pm_pmt_version,
+		     ss->ss_pcr_pid) < 0) {
       pm->m_errors++;
       tvhlog(LOG_ERR, "pass", "%s: Unable to build pmt", pm->pm_filename);
       return -1;
     }
+    pm->pm_pmt_version++;
   }
 
   return 0;
@@ -191,16 +194,16 @@ pass_muxer_open_file(muxer_t *m, const char *filename)
 
 
 /**
- * Write TS packets to the file descriptor
+ * Write data to the file descriptor
  */
 static void
-pass_muxer_write(muxer_t *m, const void *ts, size_t len)
+pass_muxer_write(muxer_t *m, const void *data, size_t size)
 {
   pass_muxer_t *pm = (pass_muxer_t*)m;
 
   if(pm->pm_error) {
     pm->m_errors++;
-  } else if(write(pm->pm_fd, ts, len) != len) {
+  } else if(tvh_write(pm->pm_fd, data, size)) {
     pm->pm_error = errno;
     tvhlog(LOG_ERR, "pass", "%s: Write failed -- %s", pm->pm_filename, 
 	   strerror(errno));

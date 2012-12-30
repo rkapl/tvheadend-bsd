@@ -36,6 +36,8 @@
 
 extern const char *tvheadend_version;
 extern char *tvheadend_cwd;
+extern const char *tvheadend_capabilities[];
+extern const char *tvheadend_webroot;
 
 #define PTS_UNSET INT64_C(0x8000000000000000)
 
@@ -440,11 +442,20 @@ static inline const char *tvh_strbegins(const char *s1, const char *s2)
   return s1;
 }
 
+typedef struct th_pipe
+{
+  int rd;
+  int wr;
+} th_pipe_t;
+
 int tvh_open(const char *pathname, int flags, mode_t mode);
 
 int tvh_socket(int domain, int type, int protocol);
 
 long int tvh_timezone(void);
+int tvh_pipe(int flags, th_pipe_t *pipe);
+
+int tvh_write(int fd, const void *buf, size_t len);
 
 void hexdump(const char *pfx, const uint8_t *data, int len);
 
@@ -481,6 +492,10 @@ void sbuf_put_be16(sbuf_t *sb, uint16_t u16);
 void sbuf_put_byte(sbuf_t *sb, uint8_t u8);
 
 char *md5sum ( const char *str );
+
+int makedirs ( const char *path, int mode );
+
+int rmtree ( const char *path );
 
 /* printing */
 #if __SIZEOF_LONG__ == 8
