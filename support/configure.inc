@@ -250,7 +250,7 @@ function check_pkg
 function check_library
 {
    local name=$1
-   echo -ne "Checking if dl is shared library ... ${TAB}"
+   printf "$TAB" "Checking if dl is shared library ..."
    if ld -l$name &> /dev/null; then
       echo ok
       enable external_dl
