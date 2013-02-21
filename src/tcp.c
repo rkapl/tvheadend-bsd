@@ -35,6 +35,77 @@
 #include "tcp_internal.h"
 #include "tvheadend.h"
 
+int tcp_preferred_address_family = AF_INET;
+
+void tcp_common_init(int opt_ipv6)
+{
+  if(opt_ipv6)
+    tcp_preferred_address_family = AF_INET6;
+}
+int tcp_create_server_socket(const char* bindaddr,int port)
+{
+   int fd, x;
+   struct addrinfo hints, *res, *ressave, *use = NULL;
+   char *portBuf = (char*)malloc(6);
+   int one = 1;
+   int zero = 0;
+
+
+   snprintf(portBuf, 6, "%d", port);
+
+   memset(&hints, 0, sizeof(struct addrinfo));
+   hints.ai_flags = AI_PASSIVE;
+   if (bindaddr != NULL)
+      hints.ai_flags |= AI_NUMERICHOST;
+   hints.ai_family = AF_UNSPEC;
+   hints.ai_socktype = SOCK_STREAM;
+
+   x = getaddrinfo(bindaddr, portBuf, &hints, &res);
+   free(portBuf);
+
+   if(x != 0) {
+      tvhlog(LOG_ERR, "tcp", "getaddrinfo: %s: %s", bindaddr != NULL ? bindaddr : "*",
+         x == EAI_SYSTEM ? strerror(errno) : gai_strerror(x));
+      return -1;
+   }
+
+   ressave = res;
+   while(res)
+   {
+      if(res->ai_family == tcp_preferred_address_family)
+      {
+         use = res;
+         break;
+      }
+      else if(use == NULL)
+      {
+         use = res;
+      }
+      res = res->ai_next;
+   }
+
+   fd = tvh_socket(use->ai_family, use->ai_socktype, use->ai_protocol);
+   if(fd == -1)
+      return -1;
+
+   if(use->ai_family == AF_INET6)
+      setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &zero, sizeof(int));
+
+   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int));
+
+   x = bind(fd, use->ai_addr, use->ai_addrlen);
+   freeaddrinfo(ressave);
+
+   if(x != 0)
+   {
+      tvhlog(LOG_ERR, "tcp", "bind: %s: %s", bindaddr != NULL ? bindaddr : "*", strerror(errno));
+      close(fd);
+      return -1;
+   }
+
+   listen(fd, 1);
+   return fd;
+}
 
 /**
  *
@@ -185,16 +256,12 @@ tcp_write_queue(int fd, htsbuf_queue_t *q)
   void *p;
 
   while((hd = TAILQ_FIRST(&q->hq_q)) != NULL) {
-    TAILQ_REMOVE(&q->hq_q, hd, hd_link);
-
     if (!r) {
       l = hd->hd_data_len - hd->hd_data_off;
       p = hd->hd_data + hd->hd_data_off;
       r = tvh_write(fd, p, l);
     }
-
-    free(hd->hd_data);
-    free(hd);
+    htsbuf_data_free(q, hd);
   }
   q->hq_size = 0;
   return r;
@@ -348,6 +415,30 @@ tcp_read_timeout(int fd, void *buf, size_t len, int timeout)
 
 }
 
+/**
+ *
+ */
+char *
+tcp_get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
+{
+  if(sa == NULL || s == NULL)
+    return NULL;
+
+  switch(sa->sa_family)
+  {
+    case AF_INET:
+      inet_ntop(AF_INET, &(((struct sockaddr_in*)sa)->sin_addr), s, maxlen);
+      break;
+    case AF_INET6:
+      inet_ntop(AF_INET6, &(((struct sockaddr_in6*)sa)->sin6_addr), s, maxlen);
+      break;
+    default:
+      strncpy(s, "Unknown AF", maxlen);
+      return NULL;
+  }
+
+  return s;
+}
 void* tcp_server_start(void *aux)
 {
   tcp_server_launch_t *tsl = aux;

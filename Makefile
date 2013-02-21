@@ -20,8 +20,8 @@
 # Configuration
 #
 
-include ${CURDIR}/.config.mk
-PROG = ${BUILDDIR}/tvheadend
+include $(dir $(lastword $(MAKEFILE_LIST))).config.mk
+PROG    := $(BUILDDIR)/tvheadend
 
 ifeq (${CONFIG_EXTERNAL_DL},yes)
 LD_LIB_FLAGS = -ldl
@@ -36,9 +36,11 @@ CFLAGS  += -Wall -Werror -Wwrite-strings -Wno-deprecated-declarations -Wno-forma
 CFLAGS  += -Wmissing-prototypes -fms-extensions
 CFLAGS  += -g -funsigned-char -O2 
 CFLAGS  += -D_FILE_OFFSET_BITS=64
-CFLAGS  += -I${BUILDDIR} -I${CURDIR}/src -I${CURDIR}
+CFLAGS  += -I${BUILDDIR} -I${ROOTDIR}/src -I${ROOTDIR}
 LDFLAGS += -lrt -lpthread -lm ${LD_LIB_FLAGS}
 
+vpath %.c $(ROOTDIR)
+vpath %.h $(ROOTDIR)
 
 #
 # Other config
@@ -51,16 +53,16 @@ BUNDLE_FLAGS = ${BUNDLE_FLAGS-yes}
 # Binaries/Scripts
 #
 
-MKBUNDLE = $(PYTHON) $(CURDIR)/support/mkbundle
+MKBUNDLE = $(PYTHON) $(ROOTDIR)/support/mkbundle
 
 #
 # Debug/Output
 #
 
 ifndef V
-ECHO   = printf "$(1)\t\t%s\n" $(2)
+ECHO   = printf "%-16s%s\n" $(1) $(2)
 BRIEF  = CC MKBUNDLE CXX
-MSG    = $@
+MSG    = $(subst $(BUILDDIR)/,,$@)
 $(foreach VAR,$(BRIEF), \
     $(eval $(VAR) = @$$(call ECHO,$(VAR),$$(MSG)); $($(VAR))))
 endif
@@ -68,10 +70,10 @@ endif
 #
 # Core
 #
-SRCS =  src/main.c \
+SRCS =  src/version.c \
+	src/main.c \
 	src/utils.c \
 	src/wrappers.c \
-	src/version.c \
 	src/access.c \
 	src/dtable.c \
 	src/tcp.c \
@@ -115,6 +117,8 @@ SRCS =  src/main.c \
   src/config2.c \
   src/lang_codes.c \
   src/lang_str.c \
+  src/imagecache.c \
+  src/tvhtime.c
 
 SRCS += src/epggrab/module.c\
   src/epggrab/channel.c\
@@ -127,13 +131,11 @@ SRCS-$(CONFIG_LINUXDVB) += src/epggrab/otamux.c\
   src/epggrab/support/freesat_huffman.c \
 
 SRCS += src/plumbing/tsfix.c \
-	src/plumbing/globalheaders.c \
+	src/plumbing/globalheaders.c
 
 SRCS += src/dvr/dvr_db.c \
 	src/dvr/dvr_rec.c \
 	src/dvr/dvr_autorec.c \
-	src/dvr/ebml.c \
-	src/dvr/mkmux.c \
 
 SRCS += src/webui/webui.c \
 	src/webui/comet.c \
@@ -143,12 +145,21 @@ SRCS += src/webui/webui.c \
 	src/webui/html.c\
 
 SRCS += src/muxer.c \
-	src/muxer_pass.c \
-	src/muxer_tvh.c \
+	src/muxer/muxer_pass.c \
+	src/muxer/muxer_tvh.c \
+	src/muxer/tvh/ebml.c \
+	src/muxer/tvh/mkmux.c \
 
 #
 # Optional code
 #
+
+# Timeshift
+SRCS-${CONFIG_TIMESHIFT} += \
+  src/timeshift.c \
+  src/timeshift/timeshift_filemgr.c \
+  src/timeshift/timeshift_writer.c \
+  src/timeshift/timeshift_reader.c \
 
 # DVB
 SRCS-${CONFIG_LINUXDVB} += \
@@ -168,6 +179,10 @@ SRCS-${CONFIG_LINUXDVB} += \
 	src/webui/extjs_dvb.c \
 	src/muxes.c \
 
+# Inotify
+SRCS-${CONFIG_INOTIFY} += \
+  src/dvr/dvr_inotify.c \
+
 # V4L
 SRCS-${CONFIG_V4L} += \
 	src/v4l.c \
@@ -175,6 +190,10 @@ SRCS-${CONFIG_V4L} += \
 
 # Avahi
 SRCS-$(CONFIG_AVAHI) += src/avahi.c
+
+# libav
+SRCS-$(CONFIG_LIBAV) += src/libav.c \
+	src/muxer/muxer_libav.c
 
 # CWC
 SRCS-${CONFIG_CWC} += src/cwc.c \
@@ -203,7 +222,7 @@ SRCS-${CONFIG_BUNDLE}     += bundle.c
 BUNDLES-yes               += docs/html docs/docresources src/webui/static
 BUNDLES-yes               += data/conf
 BUNDLES-${CONFIG_DVBSCAN} += data/dvb-scan
-BUNDLES                    = $(BUNDLES-yes)
+BUNDLES                    = $(BUNDLES-yes:%=$(ROOTDIR)/%)
 
 #
 # Add-on modules
@@ -228,16 +247,26 @@ DEPS       = ${OBJS:%.o=%.d}
 all: ${PROG}
 
 # Special
-.PHONY:	clean distclean
+.PHONY:	clean distclean check_config reconfigure
+
+# Check configure output is valid
+check_config:
+	@test $(ROOTDIR)/.config.mk -nt $(ROOTDIR)/configure\
+		|| echo "./configure output is old, please re-run"
+	@test $(ROOTDIR)/.config.mk -nt $(ROOTDIR)/configure
+
+# Recreate configuration
+reconfigure:
+	$(ROOTDIR)/configure $(CONFIGURE_ARGS)
 
 # Binary
-${PROG}: $(OBJS) $(ALLDEPS)
+${PROG}: check_config $(OBJS) $(ALLDEPS)
 	$(CC) -o $@ $(OBJS) $(CFLAGS) $(LDFLAGS)
 
 # Object
 ${BUILDDIR}/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) -MD -MP $(CFLAGS) -c -o $@ $(CURDIR)/$<
+	$(CC) -MD -MP $(CFLAGS) -c -o $@ $<
 
 # Add-on
 ${BUILDDIR}/%.so: ${SRCS_EXTRA}
@@ -250,24 +279,24 @@ clean:
 	find . -name "*~" | xargs rm -f
 
 distclean: clean
-	rm -rf ${CURDIR}/build.*
-	rm -f ${CURDIR}/.config.mk
+	rm -rf ${ROOTDIR}/build.*
+	rm -f ${ROOTDIR}/.config.mk
 
-# Create buildversion.h
-src/version.c: FORCE
-	@$(CURDIR)/support/version $@ > /dev/null
+# Create version
+$(ROOTDIR)/src/version.c: FORCE
+	@$(ROOTDIR)/support/version $@ > /dev/null
 FORCE:
 
 # Include dependency files if they exist.
 -include $(DEPS)
 
 # Include OS specific targets
-include support/${OSENV}.mk
+include ${ROOTDIR}/support/${OSENV}.mk
 
 # Bundle files
 $(BUILDDIR)/bundle.o: $(BUILDDIR)/bundle.c
 	@mkdir -p $(dir $@)
-	$(CC) -I${CURDIR}/src -c -o $@ $<
+	$(CC) -I${ROOTDIR}/src -c -o $@ $<
 
 $(BUILDDIR)/bundle.c:
 	@mkdir -p $(dir $@)

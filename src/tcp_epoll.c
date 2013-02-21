@@ -38,6 +38,7 @@ tcp_server_init(void)
 
   tcp_server_epoll_fd = epoll_create(10);
   pthread_create(&tid, NULL, tcp_server_loop, NULL);
+  
 }
 
 void *
@@ -74,7 +75,7 @@ tcp_server_loop(void *aux)
               tsl = malloc(sizeof(tcp_server_launch_t));
               tsl->start  = ts->start;
               tsl->opaque = ts->opaque;
-              slen = sizeof(struct sockaddr_in);
+              slen = sizeof(struct sockaddr_storage);
 
               tsl->fd = accept(ts->serverfd,
                                (struct sockaddr *)&tsl->peer, &slen);
@@ -86,7 +87,7 @@ tcp_server_loop(void *aux)
                 }
 
 
-              slen = sizeof(struct sockaddr_in);
+              slen = sizeof(struct sockaddr_storage);
               if(getsockname(tsl->fd, (struct sockaddr *)&tsl->self, &slen)) {
                   close(tsl->fd);
                   free(tsl);
@@ -99,32 +100,15 @@ tcp_server_loop(void *aux)
     }
   return NULL;
 }
-tcp_server_t* tcp_server_create(int port, tcp_server_callback_t *start, void *opaque)
+tcp_server_t* tcp_server_create(const char* bindaddr,int port, tcp_server_callback_t *start, void *opaque)
 {
-  int fd, x;
   struct epoll_event e;
   tcp_server_t *ts;
-  struct sockaddr_in s;
-  int one = 1;
+  int fd;
+
   memset(&e, 0, sizeof(e));
-  fd = tvh_socket(AF_INET, SOCK_STREAM, 0);
-  if(fd == -1)
-    return NULL;
 
-  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int));
-
-  memset(&s, 0, sizeof(s));
-  s.sin_family = AF_INET;
-  s.sin_port = htons(port);
-
-  x = bind(fd, (struct sockaddr *)&s, sizeof(s));
-  if(x < 0) {
-    close(fd);
-    return NULL;
-  }
-
-  listen(fd, 1);
-
+  fd=tcp_create_server_socket(bindaddr,port);
   ts = malloc(sizeof(tcp_server_t));
   ts->serverfd = fd;
   ts->start = start;

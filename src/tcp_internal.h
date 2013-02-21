@@ -11,6 +11,9 @@
  */
 void* tcp_server_start(void *aux);
 
+int tcp_create_server_socket(const char* bindaddr,int port);
+
+
 /**
  * @brief TCP server structure. One for each listening socket
  */
@@ -26,8 +29,8 @@ typedef struct tcp_server_launch_t {
   tcp_server_callback_t *start;
   void *opaque;
   int fd;
-  struct sockaddr_in peer;
-  struct sockaddr_in self;
+  struct sockaddr_storage peer;
+  struct sockaddr_storage self;
 } tcp_server_launch_t;
 
 #endif

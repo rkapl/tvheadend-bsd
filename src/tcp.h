@@ -25,8 +25,8 @@
 
 
 typedef void (tcp_server_callback_t)(int fd, void *opaque,
-                     struct sockaddr_in *peer,
-                     struct sockaddr_in *self);
+                     struct sockaddr_storage *peer,
+                     struct sockaddr_storage *self);
 typedef struct tcp_server tcp_server_t;
 //typedef struct tcp_server_launch_t tcp_server_launch_t;
 
@@ -34,6 +34,8 @@ typedef struct tcp_server tcp_server_t;
  * @brief Start the main listening thread. It will listen to threads created by tcp_server_create
  */
 void tcp_server_init(void);
+void tcp_common_init(int opt_ipv6);
+extern int tcp_preferred_address_family;
 
 /**
  * Makes a TCP connection to the given host. If something fails, a human readable message will
@@ -50,7 +52,7 @@ int tcp_connect(const char *hostname, int port, char *errbuf,
  * @param opaque values passed to callback
  * @return tcp_server instance
  */
-tcp_server_t* tcp_server_create(int port, tcp_server_callback_t *start, void *opaque);
+tcp_server_t* tcp_server_create(const char* bindaddr,int port, tcp_server_callback_t *start, void *opaque);
 
 int tcp_read(int fd, void *buf, size_t len);
 
@@ -63,5 +65,7 @@ int tcp_read_data(int fd, char *buf, const size_t bufsize,
 int tcp_write_queue(int fd, htsbuf_queue_t *q);
 
 int tcp_read_timeout(int fd, void *buf, size_t len, int timeout);
+
+char *tcp_get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen);
 
 #endif /* TCP_H_ */

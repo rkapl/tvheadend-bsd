@@ -29,39 +29,24 @@ tcp_server_init(void){
   }
   pthread_mutex_init(&tcp_mutex,NULL);
   pthread_create(&tid, NULL, tcp_server_loop, NULL);
+
 }
 
-tcp_server_t* tcp_server_create(int port, tcp_server_callback_t *start, void *opaque){
-  struct sockaddr_in s;
-  int one = 1;
+tcp_server_t* tcp_server_create(const char* bindaddr,int port, tcp_server_callback_t *start, void *opaque){
   tcp_server_t* server;
-  int fd,x;
+  int fd;
+
   pthread_mutex_lock(&tcp_mutex);
     server=&tcp_servers[tcp_servers_used];
     tcp_servers_used++;
     server->opaque=opaque;
     server->start=start;
-    fd = tvh_socket(AF_INET, SOCK_STREAM, 0);
+    fd = tcp_create_server_socket(bindaddr,port);
     server->serverfd=fd;
     if(fd == -1){
       pthread_mutex_unlock(&tcp_mutex);
       return NULL;
     }
-
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int));
-
-    memset(&s, 0, sizeof(s));
-    s.sin_family = AF_INET;
-    s.sin_port = htons(port);
-
-    x = bind(fd, (struct sockaddr *)&s, sizeof(s));
-    if(x < 0) {
-      close(fd);
-      pthread_mutex_unlock(&tcp_mutex);
-      return NULL;
-    }
-
-    listen(fd, 1);
   pthread_mutex_unlock(&tcp_mutex);
 
   //wakeup our server thread and force it to start listening on our new socket

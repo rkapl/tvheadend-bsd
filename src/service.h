@@ -249,6 +249,7 @@ typedef struct service {
    * subscription scheduling.
    */
   int s_enabled;
+  int (*s_is_enabled)(struct service *t);
 
   /**
    * Last PCR seen, we use it for a simple clock for rawtsinput.c
@@ -339,7 +340,6 @@ typedef struct service {
    * Teletext...
    */
   th_commercial_advice_t s_tt_commercial_advice;
-  int s_tt_rundown_content_length;
   time_t s_tt_clock;   /* Network clock as determined by teletext decoder */
  
   /**
@@ -550,6 +550,10 @@ const char *service_servicetype_txt(service_t *t);
 int service_is_tv(service_t *t);
 
 int service_is_radio(service_t *t);
+
+int servicetype_is_tv(int st);
+
+int servicetype_is_radio(int st);
 
 void service_destroy(service_t *t);
 
