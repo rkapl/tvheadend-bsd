@@ -22,9 +22,10 @@
 #include "timeshift/private.h"
 #include "atomic.h"
 
+#include <poll.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/epoll.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -410,7 +411,7 @@ static int _timeshift_flush_to_live
 void *timeshift_reader ( void *p )
 {
   timeshift_t *ts = p;
-  int efd, nfds, end, fd = -1, run = 1, wait = -1;
+  int nfds, end, fd = -1, run = 1, wait = -1;
   timeshift_file_t *cur_file = NULL;
   off_t cur_off = 0;
   int cur_speed = 100, keyframe_mode = 0;
@@ -421,12 +422,10 @@ void *timeshift_reader ( void *p )
   streaming_skip_t *skip = NULL;
   time_t last_status = 0;
 
-  /* Poll */
-  struct epoll_event ev = { 0 };
-  efd        = epoll_create(1);
-  ev.events  = EPOLLIN;
-  ev.data.fd = ts->rd_pipe.rd;
-  epoll_ctl(efd, EPOLL_CTL_ADD, ev.data.fd, &ev);
+  //ev.data.fd = ts->rd_pipe.rd;
+  struct pollfd poll_list[1]={ 
+      {.fd=ts->rd_pipe.rd, .events=POLLIN, .revents=0} 
+  };
 
   /* Output */
   while (run) {
@@ -438,7 +437,8 @@ void *timeshift_reader ( void *p )
 
     /* Wait for data */
     if(wait)
-      nfds = epoll_wait(efd, &ev, 1, wait);
+      nfds = poll(poll_list,1,wait);
+      //epoll_wait(efd, &ev, 1, wait);
     else
       nfds = 0;
     wait      = -1;
@@ -449,7 +449,7 @@ void *timeshift_reader ( void *p )
     /* Control */
     pthread_mutex_lock(&ts->state_mutex);
     if (nfds == 1) {
-      if (_read_msg(ev.data.fd, &ctrl) > 0) {
+      if (_read_msg(ts->rd_pipe.rd, &ctrl) > 0) {
 
         /* Exit */
         if (ctrl->sm_type == SMT_EXIT) {

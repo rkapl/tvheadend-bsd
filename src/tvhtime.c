@@ -95,8 +95,10 @@ tvhtime_update ( struct tm *tm )
 
   /* Update local clock */
   if (tvhtime_update_enabled)
-    if (llabs(t2 - t1) > tvhtime_tolerance)
-      stime(&now);
+    if (llabs(t2 - t1) > tvhtime_tolerance){
+      struct timeval now_tv={.tv_usec=0,.tv_sec=now};
+      settimeofday(&now_tv,NULL);
+    }
 
   /* NTP */
   if (tvhtime_ntp_enabled) {
